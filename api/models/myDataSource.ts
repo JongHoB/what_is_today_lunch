@@ -1,5 +1,6 @@
 import { DataSource } from "typeorm";
-
+import dotenv from "dotenv";
+dotenv.config();
 type dataSource = "mysql" | "postgres";
 
 const myDataSource = new DataSource({
