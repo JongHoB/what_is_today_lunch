@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { ChattingControllers } from "../controllers/chattingControllers";
+import { chattingControllers } from "../controllers/chattingControllers";
 
 export const router = Router();
 
-router.post("", ChattingControllers.conversation);
+router.post("", chattingControllers.conversation);
