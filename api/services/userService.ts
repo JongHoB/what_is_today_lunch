@@ -13,13 +13,20 @@ class userService {
     const userName = googleInfo.name;
     const userEmail = googleInfo.email;
     const userImage = googleInfo.picture;
-    const userInfo = await userDao.getUserInfo(userEmail);
+    const [userInfo] = await userDao.getUserInfo(userEmail);
 
-    if (!userInfo) {
-      const newUser = await userDao.createUser(userName, userEmail, userImage);
+    if (userInfo === undefined) {
+      const [newUser] = await userDao.createUser(
+        userName,
+        userEmail,
+        userImage
+      );
       const payLoad = { userId: newUser.id };
       const accessToken = jwt.sign(payLoad, process.env.JWT_SECRET!);
       return accessToken;
+    }
+    if (userInfo.profile_image !== userImage) {
+      await userDao.updateUserProfileImage(userEmail, userImage);
     }
     const payLoad = { userId: userInfo.id };
     const accessToken = jwt.sign(payLoad, process.env.JWT_SECRET!);
