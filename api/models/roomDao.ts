@@ -6,10 +6,10 @@ class roomDao {
     return await myDataSource.query(
       `SELECT
   rd.room_name,
-  rd.users_count,
+  (SELECT COUNT user_id FROM room),
   rd.room_order_status_id,
   rd.map_categories_id,
-  u.nickname,
+  u.name,
   u.profile_image
   FROM
   room_description rd
@@ -24,23 +24,23 @@ class roomDao {
     roomCategory: number,
     userId: number
   ) => {
-    const roomDescription = await myDataSource.query(
+    await myDataSource.query(
       `INSERT INTO
       room_description(
-        room_name,
         map_categories_id,
-        users_count,
         room_order_status_id
         )
-        VALUES ($1, $2, 1, 1)`,
-      [roomName, roomCategory]
+        VALUES ($2, 1)`,
+      [roomCategory]
     );
+
     const room = await myDataSource.query(
       `INSERT INTO
       room(
-        room_description_id)
-        VALUES(?)`,
-      [roomDescription.id]
+        room_name)
+        VALUES($1)
+      `,
+      [roomName]
     );
     await myDataSource.query(
       `INSERT INTO
@@ -56,19 +56,19 @@ class roomDao {
   static getRoomInfo = async (req: Request) => {
     return myDataSource.query(
       `SELECT
-      u.nickname,
+      u.name,
       u.profile_image,
-      rd.room_name,
+      r.room_name,
       rd.room_order_status_id
       FROM
       room_description rd
-      JOIN room ON room.room_description_id = rd.id
+      JOIN room r ON r.room_description_id = rd.id
       JOIN room_users ru ON room.id = ru.room_id
-      JOIN users u ON ru.users_id = u.id`
+      JOIN users u ON ru.user_id = u.id`
     );
   };
 
-  static patchOrderStatus = async (orderStatus: number, roomId: number) => {
+  static updateOrderStatus = async (orderStatus: number, roomId: number) => {
     return myDataSource.query(
       `UPDATE 
       room_description rd
@@ -81,12 +81,11 @@ class roomDao {
       [roomId, orderStatus]
     );
   };
-  static patchRoomName = async (roomName: string, roomId: number) => {
+  static updateRoomName = async (roomName: string, roomId: number) => {
     return (
       myDataSource.query(
         `UPDATE
-      room_description rd
-      JOIN room r ON rd.id = r.room_description_id
+      room r
       SET
       room_name =$1
       WHERE r.id = $2`
@@ -95,7 +94,7 @@ class roomDao {
     );
   };
   static postRoomUser = async (userId: number, roomId: number) => {
-    await myDataSource.query(
+    return await myDataSource.query(
       `INSERT INTO
       room_users(
         users_id,
@@ -104,13 +103,6 @@ class roomDao {
         ($1, $2)`,
       [userId, roomId]
     );
-    await myDataSource.query(
-      `UPDATE
-      room_description rd
-      JOIN room r ON rd.id = r.room_description_id
-      SET users_count = users_count + 1
-      WHERE r.id = $2`
-    );
   };
   static deleteRoomUser = async (userId: number, roomId: number) => {
     await myDataSource.query(
@@ -118,21 +110,6 @@ class roomDao {
       WHERE user_id = $1 AND room_id = $2`,
       [userId, roomId]
     );
-    const result = await myDataSource.query(
-      `UPDATE
-        room_description rd
-        JOIN room r ON rd.id = r.room_description_id
-        SET users_count = users_count - 1
-        WHERE r.id = $2`
-    );
-
-    if (result.users_count === 0) {
-      await myDataSource.query(
-        `DELETE FROM room_description rd
-        JOIN room r ON rd.id = r.room_description_id
-        WHERE r.id = $2 AND r.id = r.room_description_id`
-      );
-    }
   };
   static updateCategory = async (userId: number, categoryId: number) => {
     return myDataSource.query(

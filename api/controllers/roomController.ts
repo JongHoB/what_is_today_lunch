@@ -18,15 +18,15 @@ class roomController {
     return res.status(200).json({ result });
   };
 
-  static patchOrderStatus = async (req: Request, res: Response) => {
+  static updateOrderStatus = async (req: Request, res: Response) => {
     const { roomId, orderStatus } = req.body;
-    await roomService.patchOrderStatus(orderStatus, roomId);
+    await roomService.updateOrderStatus(orderStatus, roomId);
     return res.status(201).json({ message: "SUCCESS_PATCH_ORDER_STATUS" });
   };
 
-  static patchRoomName = async (req: Request, res: Response) => {
+  static updateRoomName = async (req: Request, res: Response) => {
     const { roomId, roomName } = req.body;
-    await roomService.patchRoomName(roomName, roomId);
+    await roomService.updateRoomName(roomName, roomId);
     return res.status(201).json({ message: "SUCCESS_PATCH_ROOM_NAME" });
   };
   static postRoomUser = async (req: Request, res: Response) => {

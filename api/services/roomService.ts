@@ -12,11 +12,11 @@ class roomService {
   static getRoomInfo = (req: Request) => {
     return roomDao.getRoomInfo(req);
   };
-  static patchOrderStatus = (orderStatus: number, roomId: number) => {
-    return roomDao.patchOrderStatus(orderStatus, roomId);
+  static updateOrderStatus = (orderStatus: number, roomId: number) => {
+    return roomDao.updateOrderStatus(orderStatus, roomId);
   };
-  static patchRoomName = (roomName: string, roomId: number) => {
-    return roomDao.patchRoomName(roomName, roomId);
+  static updateRoomName = (roomName: string, roomId: number) => {
+    return roomDao.updateRoomName(roomName, roomId);
   };
   static postRoomUser = (userId: any, roomId: number) => {
     return roomDao.postRoomUser(userId, roomId);
