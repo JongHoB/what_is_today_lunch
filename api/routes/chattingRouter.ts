@@ -1,6 +1,9 @@
 import { Router } from "express";
 import { chattingControllers } from "../controllers/chattingControllers";
+import { socketIo } from "../middlewares/socket";
 
-export const router = Router();
+const chattingRouter = Router();
 
-router.post("", chattingControllers.conversation);
+chattingRouter.get("/:roomId", socketIo, chattingControllers.conversation);
+
+export default chattingRouter;

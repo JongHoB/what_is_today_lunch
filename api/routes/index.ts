@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { router as chattingRouter } from "./chattingRouter";
+import chattingRouter from "./chattingRouter";
 
 const router = Router();
 
