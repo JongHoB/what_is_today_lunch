@@ -1,21 +1,23 @@
 import myDataSource from "./myDataSource";
-import { Request } from "express";
 
 class roomDao {
-  static getRoomList = async (req: Request) => {
+  static getRoomList = async () => {
     return await myDataSource.query(
       `SELECT
-  rd.room_name,
-  (SELECT COUNT user_id FROM room),
+  room.name,
+  room.id,
+  COUNT(ru.room_id),
   rd.room_order_status_id,
-  rd.map_categories_id,
-  u.name,
-  u.profile_image
+  rd.map_category_id,
+  json_agg(
+    json_build_object('userName', u.name,'userProfile', u.profile_image)
+  ) as user
   FROM
   room_description rd
-  JOIN room ON room.room_description_id = rd.id
+  JOIN room ON rd.room_id = room.id
   JOIN room_users ru ON room.id = ru.room_id
-  JOIN users u ON ru.users_id = u.id`
+  JOIN users u ON ru.user_id = u.id
+  GROUP BY room.name,room.id,rd.room_order_status_id,rd.map_category_id;`
     );
   };
 
@@ -24,47 +26,52 @@ class roomDao {
     roomCategory: number,
     userId: number
   ) => {
-    await myDataSource.query(
-      `INSERT INTO
-      room_description(
-        map_categories_id,
-        room_order_status_id
-        )
-        VALUES ($2, 1)`,
-      [roomCategory]
-    );
-
-    const room = await myDataSource.query(
+    const [room] = await myDataSource.query(
       `INSERT INTO
       room(
-        room_name)
+        name)
         VALUES($1)
+        RETURNING id 
       `,
       [roomName]
     );
     await myDataSource.query(
       `INSERT INTO
       room_users(
-        users_id,
+        user_id,
         room_id
       )
       VALUES
-      (?, $3)`,
+      ($2, $1)`,
       [room.id, userId]
     );
+    await myDataSource.query(
+      `INSERT INTO
+      room_description(
+        map_category_id,
+        room_order_status_id,
+        room_id
+        )
+        VALUES ($1, 1, $2)`,
+      [roomCategory, room.id]
+    );
   };
-  static getRoomInfo = async (req: Request) => {
+  static getRoomInfo = async () => {
     return myDataSource.query(
       `SELECT
-      u.name,
-      u.profile_image,
-      r.room_name,
-      rd.room_order_status_id
+      room.id,
+      json_agg(
+        json_build_object(
+      'userName', users.name,
+      'userProfile', users.profile_image,
+      'roomName', room.name,
+      'orderStatus', rd.room_order_status_id)) as data
       FROM
       room_description rd
-      JOIN room r ON r.room_description_id = rd.id
+      JOIN room ON room.id = rd.room_id
       JOIN room_users ru ON room.id = ru.room_id
-      JOIN users u ON ru.user_id = u.id`
+      JOIN users ON ru.user_id = users.id
+GROUP BY room.id`
     );
   };
 
@@ -72,24 +79,24 @@ class roomDao {
     return myDataSource.query(
       `UPDATE 
       room_description rd
-      JOIN room r ON rd.id = r.room_description_id
       SET
-       room_order_status_id = $1
+       room_order_status_id = $2
+       FROM room
       WHERE
-      r.id = $2
+      room.id = rd.room_id
+      AND
+      room.id = $1
       `,
       [roomId, orderStatus]
     );
   };
   static updateRoomName = async (roomName: string, roomId: number) => {
-    return (
-      myDataSource.query(
-        `UPDATE
-      room r
+    return myDataSource.query(
+      `UPDATE
+      room
       SET
-      room_name =$1
-      WHERE r.id = $2`
-      ),
+      name =$1
+      WHERE id = $2`,
       [roomName, roomId]
     );
   };
@@ -97,7 +104,7 @@ class roomDao {
     return await myDataSource.query(
       `INSERT INTO
       room_users(
-        users_id,
+        user_id,
         room_id)
         VALUES
         ($1, $2)`,
@@ -111,16 +118,24 @@ class roomDao {
       [userId, roomId]
     );
   };
-  static updateCategory = async (userId: number, categoryId: number) => {
+  static updateCategory = async (categoryId: number, roomId: number) => {
     return myDataSource.query(
       `UPDATE
       room_description rd 
-      JOIN room r ON rd.id = r.room_description_id
-      JOIN room_users ru ON r.id = ru.room_id
-      SET map_categories_id = $2
-      WHERE ru.user_id = $1`,
-      [userId, categoryId]
+      SET map_category_id = $2
+      WHERE room_id = $1`,
+      [roomId, categoryId]
     );
+  };
+  static deleteAll = async (roomId: number) => {
+    await myDataSource.query(
+      `DELETE FROM room_description WHERE room_id = $1`,
+      [roomId]
+    );
+    await myDataSource.query(`DELETE FROM room_users WHERE room_id = $1`, [
+      roomId,
+    ]);
+    await myDataSource.query(`DELETE FROM room WHERE id = $1`, [roomId]);
   };
 }
 export default roomDao;

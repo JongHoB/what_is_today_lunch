@@ -2,15 +2,15 @@ import roomDao from "../models/roomDao";
 import { Request } from "express";
 
 class roomService {
-  static getRoomList = (req: Request) => {
-    return roomDao.getRoomList(req);
+  static getRoomList = () => {
+    return roomDao.getRoomList();
   };
   static postRoom = (roomName: string, roomCategory: number, userId: any) => {
     return roomDao.postRoom(roomName, roomCategory, userId);
   };
 
-  static getRoomInfo = (req: Request) => {
-    return roomDao.getRoomInfo(req);
+  static getRoomInfo = () => {
+    return roomDao.getRoomInfo();
   };
   static updateOrderStatus = (orderStatus: number, roomId: number) => {
     return roomDao.updateOrderStatus(orderStatus, roomId);
@@ -24,8 +24,11 @@ class roomService {
   static deleteRoomUser = (userId: any, roomId: number) => {
     return roomDao.deleteRoomUser(userId, roomId);
   };
-  static updateCategory = (userId: any, categoryId: number) => {
-    return roomDao.updateCategory(userId, categoryId);
+  static updateCategory = (categoryId: number, roomId: number) => {
+    return roomDao.updateCategory(categoryId, roomId);
+  };
+  static deleteAll = (roomId: number) => {
+    return roomDao.deleteAll(roomId);
   };
 }
 export default roomService;
