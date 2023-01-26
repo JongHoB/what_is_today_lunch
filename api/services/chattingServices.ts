@@ -1,7 +1,9 @@
-import { chattingDao } from "../models/chattingDao";
+import chattingDao from "../models/chattingDao";
 
-export const chattingServices = {
-  conversation: async (data: string) => {
-    return await chattingDao.conversation(data);
-  },
-};
+class chattingServices {
+  static getUserInfo = async (roomId: string, name: string, image: string) => {
+    return await chattingDao.getUserInfo(roomId, name, image);
+  };
+}
+
+export default chattingServices;
