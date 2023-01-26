@@ -1,16 +1,16 @@
 import myDataSource from "./myDataSource";
 
 class chattingDao {
-  static getUserInfo = async (roomId: string, name: string, image: string) => {
-    const result = await myDataSource.query(
-      `
-      SELECT
-        *
-      FROM users
-      `
+  static messageHistory = async (roomId: string) => {
+    return myDataSource.query(
+      `SELECT
+       user_id,
+       room_id,
+       message
+       FROM chatting
+       WHERE room_id=$1;`,
+      [roomId]
     );
-    [];
-    return result;
   };
   static messageData = async (msg: string, userId: string, roomId: string) => {
     return myDataSource.query(
