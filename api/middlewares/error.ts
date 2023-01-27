@@ -20,3 +20,10 @@ export const errorHandler = (
   console.error(err);
   return response.status(err.statusCode || 500).json({ message: err.message });
 };
+
+export const throwCustomError = (message: string, statusCode: number) => {
+  const err: e = new Error(message);
+  err.statusCode = statusCode;
+
+  throw err;
+};
