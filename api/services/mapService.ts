@@ -38,7 +38,8 @@ class mapService {
   ) => {
     //checking if there is a restaurant
     const result = await mapDao.check(mapId);
-    if (result) throwCustomError("There is no restaurant to write review", 400);
+    if (!result)
+      throwCustomError("There is no restaurant to write review", 400);
     //create a new restaurant review
     return await mapDao.createRestaurantReview(
       userId,
@@ -65,7 +66,7 @@ class mapService {
   ) => {
     //check if there is a restaurant
     const result = await mapDao.check(mapId);
-    if (result) throwCustomError("There is no restaurant to update", 400);
+    if (!result) throwCustomError("There is no restaurant to update", 400);
 
     return await mapDao.updateRestaurant(
       mapId,
@@ -88,7 +89,7 @@ class mapService {
   ) => {
     //check if there is a reviewId with userId
     const result = await mapDao.check(userId, reviewId);
-    if (result) throwCustomError("There is no review for the user", 400);
+    if (!result) throwCustomError("There is no review for the user", 400);
 
     return await mapDao.updateRestaurantReview(
       userId,
@@ -100,13 +101,13 @@ class mapService {
   static deleteRestaurant = async (mapId: number) => {
     //check if there is a mapId
     const result = await mapDao.check(mapId);
-    if (result) throwCustomError("There is no map", 400);
+    if (!result) throwCustomError("There is no map", 400);
     return await mapDao.deleteRestaurant(mapId);
   };
   static deleteRestaurantReview = async (reviewId: number, userId: number) => {
     //check if there is a reviewId with userId
     const result = await mapDao.check(userId, reviewId);
-    if (result) throwCustomError("There is no review for the user", 400);
+    if (!result) throwCustomError("There is no review for the user", 400);
     return await mapDao.deleteRestaurantReview(reviewId, userId);
   };
 }

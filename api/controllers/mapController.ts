@@ -17,6 +17,8 @@ class mapController {
         longitude,
       } = request.body;
 
+      console.log(request.body);
+
       if (
         !mapCategoryId ||
         !phoneNumber ||

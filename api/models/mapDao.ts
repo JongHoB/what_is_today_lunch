@@ -6,7 +6,7 @@ class mapDao {
     let query: string;
     switch (typeof second) {
       case "string":
-        query = `SELECT * FROM map WHERE map_point='($1,$2)';`;
+        query = `SELECT * FROM map WHERE ST_X(map_point)=$1 AND ST_Y(map_point)=$2;`;
         break;
       case "number":
         query = `SELECT * FROM review WHERE id=$1 AND user_id=$2;`;
@@ -18,7 +18,11 @@ class mapDao {
         throwCustomError("Invalid data input", 400);
     }
 
-    const [result] = await myDataSource.query(query!, [first, second ?? true]);
+    const [result] = await myDataSource.query(query!, [
+      first,
+      second ?? "true",
+    ]);
+    console.log(result);
     return result;
   };
   static createRestaurant = async (
@@ -62,11 +66,12 @@ class mapDao {
   };
   static getRestaurants = async (categoryId: number) => {
     const whereQuery: string =
-      categoryId == 0 ? "" : "WHERE m.map_category_id=$1";
+      categoryId == 0 ? "" : "WHERE m.map_category_id=" + categoryId;
 
     const result = await myDataSource.query(
       `SELECT 
-      mc.name,
+      m.id,
+      mc.name as category_name,
       ST_X(m.map_point) as longitude,
       ST_Y(m.map_point) as latitude,
       m.phone_number,
@@ -75,15 +80,16 @@ class mapDao {
       m.name,
       m.image_url,
       m.link_url,
-      json_agg(json_build_object('userId',r.user_id,'content',r.content,'imageUrl',r.image_url,'ratings',r.ratings)) as review
+      json_agg(json_build_object('reviewId',r.id,'userId',r.user_id,'content',r.content,'imageUrl',r.image_url,'ratings',r.ratings)) as review
       FROM map as m
       LEFT JOIN map_categories as mc ON m.map_category_id=mc.id
       LEFT JOIN review as r ON r.map_id=m.id
       ${whereQuery}
-      GROUP BY mc.name,m.map_point,m.address,m.name,m.image_url,m.link_url,m.phone_number,m.price;
-       `,
-      [categoryId]
+      GROUP BY m.id,mc.name,m.map_point,m.address,m.name,m.image_url,m.link_url,m.phone_number,m.price
+      ORDER BY m.id ASC;
+       `
     );
+    return result;
   };
   static updateRestaurant = async (
     mapId: number,
@@ -99,16 +105,33 @@ class mapDao {
   ) => {
     return myDataSource.query(
       `UPDATE map 
-         SET map_category_id= IF($1 IS NOT NULL, $1, map_category_id),
-             phone_number= IF($2 IS NOT NULL, $2, phone_number),
-             address= IF($3 IS NOT NULL, $3, address),
-             name= IF ($4 IS NOT NULL, $4, name),
-             image_url= IF ($5 IS NOT NULL, $5, image_url),
-             link_url= IF ($6 IS NOT NULL, $6, link_url),
-             price= IF($7 IS NOT NULL, $7, price),
-             coordinates= IF($8 IS NOT NULL, ST_SetX(coordinates,$8),coordinates),
-             coordinates= IF($9 IS NOT NULL, ST_SetY(coordinates,$9),coordinates)
-         WHERE id=$10;`,
+         SET map_category_id= (CASE WHEN $1::int IS NOT NULL THEN $1
+                              ELSE map_category_id
+                              END),
+             phone_number= (CASE WHEN $2::varchar IS NOT NULL THEN $2
+                            ELSE phone_number
+                            END),
+             address= (CASE WHEN $3::varchar IS NOT NULL THEN $3
+                       ELSE address
+                      END),
+             name= (CASE WHEN $4::varchar IS NOT NULL THEN $4
+                    ELSE name
+                    END),
+             image_url= (CASE WHEN $5::varchar IS NOT NULL THEN $5
+                          ELSE image_url
+                          END),
+             link_url= (CASE WHEN $6::varchar IS NOT NULL THEN $6
+                        ELSE link_url
+                        END),
+             price= (CASE WHEN $7::varchar IS NOT NULL THEN $7
+                      ELSE price
+                      END),
+             map_point= (CASE WHEN $8::double precision IS NOT NULL AND $9::double precision IS NOT NULL THEN ST_MakePoint($8::double precision,$9::double precision)
+                            WHEN $8::double precision IS NOT NULL THEN ST_MakePoint($8::double precision,ST_Y(map_point)) 
+                            WHEN $9::double precision IS NOT NULL THEN ST_MakePoint(ST_X(map_point),$9::double precision) 
+                            ELSE map_point
+                            END)
+         WHERE id=$10::int;`,
       [
         mapCategoryId,
         phoneNumber,
@@ -131,8 +154,12 @@ class mapDao {
   ) => {
     return myDataSource.query(
       `UPDATE review 
-       SET content = IF($1 IS NOT NULL, $1, content),
-           image_url=IF($2 IS NOT NULL, $2 , image_url) 
+       SET content = (CASE WHEN $1:varchar IS NOT NULL THEN $1:varchar
+                      ELSE content
+                      END),
+           image_url=(CASE WHEN $2:varchar IS NOT NULL THEN $2:varchar
+                      ELSE image_url
+                      END)
        WHERE id=$3 AND user_id=$4;`,
       [content, imageUrl, reviewId, userId]
     );
