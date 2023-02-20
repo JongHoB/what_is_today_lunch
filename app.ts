@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import express, { Request, Response } from "express";
+import express, { Request, Response, NextFunction } from "express";
 import morgan from "morgan";
 import cors from "cors";
 
@@ -12,6 +12,7 @@ dotenv.config();
 class app {
   private app: express.Application;
   private PORT: number;
+  public server: any;
 
   constructor() {
     this.app = express();
@@ -24,7 +25,7 @@ class app {
   private initializeMiddlewares() {
     this.app.use(express.json());
     this.app.use(cors());
-    this.app.use(morgan("combined"));
+    this.app.use(morgan("dev"));
     this.app.use(router);
   }
 
@@ -48,13 +49,17 @@ class app {
         .catch((err) => {
           console.error("Error during Data Source initialization", err);
         });
-      this.app.listen(this.PORT, () => {
+      this.server = this.app.listen(this.PORT, () => {
         console.log(`server listening on ${this.PORT}`);
       });
     } catch (err) {
       myDataSource.destroy();
       console.error(err);
     }
+  };
+
+  public getServer = async () => {
+    return this.server;
   };
 }
 
