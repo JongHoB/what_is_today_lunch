@@ -4,11 +4,11 @@ class chattingDao {
   static messageHistory = async (roomId: string) => {
     return myDataSource.query(
       `SELECT
-       user_id,
-       room_id,
-       message
-       FROM chatting
-       WHERE room_id=$1;`,
+        user_id,
+        room_id,
+        message
+      FROM chatting
+      WHERE room_id=$1;`,
       [roomId]
     );
   };
